@@ -17,6 +17,7 @@ package cmd
 
 import (
 	"fmt"
+	"math/rand"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -117,13 +118,17 @@ func createCluster(config kincConfig) error {
 	s.Suffix = " Preparing nodes 📦"
 	s.FinalMSG = " \033[32m✓\033[0m Preparing nodes 📦\n"
 	s.Start()
+
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	port := r.Intn(5535) + 60001
+
 	myCmd = exec.Command("container", "run",
 		"-d",
 		"--name", config.Name+"-control-plane",
 		"-m", "8G", "--disable-progress-updates",
 		"-e", "KUBECONFIG=/etc/kubernetes/admin.conf",
 		"-l", "io.x-k8s.kinc.cluster=kinc",
-		"-p", "127.0.0.1:6443:6443",
+		"-p", fmt.Sprintf("127.0.0.1:%d:6443", port),
 		config.Image,
 	)
 	if err := runCommand(myCmd, false); err != nil {
