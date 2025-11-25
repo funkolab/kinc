@@ -1,0 +1,62 @@
+version: "3"
+
+vars:
+  BINARY: kinc
+  PKG:
+    sh: go list
+  BUILD:
+    sh: date +%FT%T%z
+  PLATFORM:
+    sh: uname
+  LDFLAGS: -w -s -X github.com/funkolab/kinc/pkg/version.Date={{.BUILD}} -X github.com/funkolab/kinc/pkg/version.BuiltBy=Taskfile
+
+tasks:
+  build:
+    desc: Build the binary
+    sources:
+      - "**/*.go"
+      - "go.mod"
+      - "go.sum"
+    generates:
+      - "{{.BINARY}}"
+    cmds:
+      - CGO_ENABLED=0 go build -o {{.BINARY}} -ldflags "{{.LDFLAGS}}" ./main.go
+
+  test:
+    desc: Run tests
+    sources:
+      - "**/*.go"
+    cmds:
+      - go test -v -short -race -timeout 30s ./...
+
+  clean:
+    desc: Remove the binary
+    cmds:
+      - rm -rf {{.BINARY}}
+
+  clean-install:
+    desc: Remove the installed binary
+    cmds:
+      - rm -rf /usr/local/bin/{{.BINARY}}
+
+  install:
+    desc: Install the binary to /usr/local/bin
+    deps:
+      - build
+    cmds:
+      - cp {{.BINARY}} /usr/local/bin/{{.BINARY}}
+
+  check:
+    desc: Static Check Golang files
+    cmds:
+      - staticcheck ./...
+
+  vet:
+    desc: Go vet files
+    cmds:
+      - go vet ./...
+
+  default:
+    desc: Build the project
+    cmds:
+      - task: build
