@@ -17,6 +17,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"time"
 
@@ -39,6 +40,9 @@ Errors will only occur if the cluster resources exist and are not able to be del
 
 		name := cmd.Flags().Lookup("name").Value.String()
 
+		// check if verbose flag is set
+		verbose, _ := rootCmd.Flags().GetBool("verbose")
+
 		s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
 		s.Prefix = " "
 		s.Suffix = fmt.Sprintf(" Deleting cluster '%s' ...", name)
@@ -46,7 +50,10 @@ Errors will only occur if the cluster resources exist and are not able to be del
 		s.Start()
 
 		myCmd := exec.Command("container", "rm", "-f", name+"-control-plane")
-		_ = myCmd.Run()
+		if err := runCommand(myCmd, verbose); err != nil {
+			fmt.Fprintf(os.Stderr, "Error deleting cluster: %v\n", err)
+			os.Exit(1)
+		}
 		s.Stop()
 
 	},
