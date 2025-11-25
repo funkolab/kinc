@@ -99,6 +99,9 @@ func init() {
 func createCluster(config kincConfig) error {
 	fmt.Printf("Creating cluster '%s' ...\n", config.Name)
 
+	// check if verbose flag is set
+	verbose, _ := rootCmd.Flags().GetBool("verbose")
+
 	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
 	s.Prefix = " "
 	// s.Suffix = fmt.Sprintf(" Ensuring node image (%s)", config.Image)
@@ -126,7 +129,7 @@ func createCluster(config kincConfig) error {
 		"-p", "127.0.0.1:6443:6443",
 		config.Image,
 	)
-	if err := runCommand(myCmd, false); err != nil {
+	if err := runCommand(myCmd, verbose); err != nil {
 		return fmt.Errorf("\nfailed to run node: %w", err)
 	}
 	s.Stop()
@@ -136,7 +139,7 @@ func createCluster(config kincConfig) error {
 	s.FinalMSG = " \033[32m✓\033[0m Writing configuration 📜\n"
 	s.Start()
 	myCmd = exec.Command("container", "exec", config.Name+"-control-plane", "sysctl", "-w", "net.ipv4.ip_forward=1")
-	if err := runCommand(myCmd, false); err != nil {
+	if err := runCommand(myCmd, verbose); err != nil {
 		return fmt.Errorf("\nfailed to write config: %w", err)
 	}
 	s.Stop()
@@ -146,12 +149,12 @@ func createCluster(config kincConfig) error {
 	s.FinalMSG = " \033[32m✓\033[0m Starting control-plane 🕹️\n"
 	s.Start()
 	myCmd = exec.Command("container", "exec", config.Name+"-control-plane", "kubeadm", "init", "--pod-network-cidr="+config.Networking.PodSubnet)
-	if err := runCommand(myCmd, false); err != nil {
+	if err := runCommand(myCmd, verbose); err != nil {
 		return fmt.Errorf("\nfailed to init cluster: %w", err)
 	}
 
 	myCmd = exec.Command("container", "exec", config.Name+"-control-plane", "kubectl", "taint", "nodes", "--all", "node-role.kubernetes.io/control-plane-")
-	if err := runCommand(myCmd, false); err != nil {
+	if err := runCommand(myCmd, verbose); err != nil {
 		return fmt.Errorf("failed to remove taint: %w", err)
 	}
 
@@ -163,7 +166,7 @@ func createCluster(config kincConfig) error {
 	s.Start()
 	cniCmd := fmt.Sprintf("sed -e 's@{{ .PodSubnet }}@%s@' /kind/manifests/default-cni.yaml | kubectl apply -f -", config.Networking.PodSubnet)
 	myCmd = exec.Command("container", "exec", config.Name+"-control-plane", "sh", "-euc", cniCmd)
-	if err := runCommand(myCmd, false); err != nil {
+	if err := runCommand(myCmd, verbose); err != nil {
 		return fmt.Errorf("\nfailed to set up CNI: %w", err)
 	}
 	s.Stop()
@@ -174,7 +177,7 @@ func createCluster(config kincConfig) error {
 	s.Start()
 	storageCmd := "cat /kind/manifests/default-storage.yaml | kubectl apply -f -"
 	myCmd = exec.Command("container", "exec", config.Name+"-control-plane", "sh", "-euc", storageCmd)
-	if err := runCommand(myCmd, false); err != nil {
+	if err := runCommand(myCmd, verbose); err != nil {
 		return fmt.Errorf("failed to set up StorageClass: %w", err)
 	}
 	s.Stop()
