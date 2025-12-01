@@ -17,7 +17,9 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
+	"github.com/funkolab/kinc/pkg/version"
 	"github.com/spf13/cobra"
 )
 
@@ -26,7 +28,9 @@ var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Prints the kind CLI version",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("version called")
+		fmt.Printf("nkp-apple: version %s (%s)\n", version.Version, version.Commit)
+		fmt.Printf("build date:%s by: %s\nplatform: %s/%s\n", version.Date, version.BuiltBy, version.OsName, version.PlatformName)
+		os.Exit(0)
 	},
 }
 
