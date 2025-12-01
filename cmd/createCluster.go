@@ -101,28 +101,32 @@ func init() {
 }
 
 func createCluster(config kincConfig) error {
-	fmt.Printf("Creating cluster '%s' ...\n", config.Name)
+
+	// Test if cluster already exists
+	myCmd := exec.Command("container", "logs", config.Name+"-control-plane")
+	if err := runCommand(myCmd, false); err == nil {
+		cobra.CheckErr(fmt.Errorf("%s cluster already exists", config.Name))
+	}
 
 	// check if verbose flag is set
 	verbose, _ := rootCmd.Flags().GetBool("verbose")
 
+	// Start creating the cluster
+	fmt.Printf("Creating cluster '%s' ...\n", config.Name)
 	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
 	s.Prefix = " "
-	// s.Suffix = fmt.Sprintf(" Ensuring node image (%s)", config.Image)
-	// s.FinalMSG = fmt.Sprintf(" \033[32m✓\033[0m Ensuring node image (%s)\n", config.Image)
-
-	// s.Start()
 
 	// Pull the node image
-	myCmd := exec.Command("container", "image", "pull", config.Image)
+	myCmd = exec.Command("container", "image", "pull", config.Image)
 	if err := runCommand(myCmd, true); err != nil {
 		cobra.CheckErr(fmt.Errorf("\nfailed to pull node image: %w", err))
 	}
 	fmt.Printf(" \033[32m✓\033[0m Ensuring node image (%s) 🖼\n", config.Image)
 
+	// Prepare the node
+
 	memory := fmt.Sprintf("%dG", config.Memory)
 
-	// Prepare the node
 	s.Suffix = " Preparing nodes 📦"
 	s.FinalMSG = " \033[32m✓\033[0m Preparing nodes 📦\n"
 	s.Start()
