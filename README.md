@@ -12,7 +12,7 @@ A tool for creating and managing local Kubernetes clusters using Apple container
 ## Installation
 
 ```bash
-go install github.com/funkolab/kinc@latest
+GOPROXY=direct go install github.com/funkolab/kinc@latest
 ```
 
 ## Usage
