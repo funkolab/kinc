@@ -32,6 +32,7 @@ type kincConfig struct {
 	APIVersion string `yaml:"apiVersion"`
 	Name       string `yaml:"name"`
 	Image      string `yaml:"image,omitempty"`
+	Memory     int    `yaml:"memory,omitempty"`
 	Networking struct {
 		DisableDefaultCNI bool   `yaml:"disableDefaultCNI"`
 		KubeProxyMode     string `yaml:"kubeProxyMode"`
@@ -76,6 +77,8 @@ var createClusterCmd = &cobra.Command{
 
 		config.Name, _ = cmd.Flags().GetString("name")
 
+		config.Memory, _ = cmd.Flags().GetInt("memory")
+
 		err := createCluster(config)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error creating cluster: %v\n", err)
@@ -93,6 +96,7 @@ func init() {
 	createClusterCmd.Flags().StringP("name", "n", "kind", "cluster name, overrides KIND_CLUSTER_NAME, config")
 	createClusterCmd.Flags().Bool("retain", false, "retain nodes for debugging when cluster creation fails")
 	createClusterCmd.Flags().Int("wait", 0, "wait for control plane node to be ready  (default 0s)")
+	createClusterCmd.Flags().IntP("memory", "m", 8, "memory to allocate to the node in GiB")
 
 }
 
@@ -116,6 +120,8 @@ func createCluster(config kincConfig) error {
 	}
 	fmt.Printf(" \033[32m✓\033[0m Ensuring node image (%s) 🖼\n", config.Image)
 
+	memory := fmt.Sprintf("%dG", config.Memory)
+
 	// Prepare the node
 	s.Suffix = " Preparing nodes 📦"
 	s.FinalMSG = " \033[32m✓\033[0m Preparing nodes 📦\n"
@@ -123,12 +129,15 @@ func createCluster(config kincConfig) error {
 	myCmd = exec.Command("container", "run",
 		"-d",
 		"--name", config.Name+"-control-plane",
-		"-m", "8G", "--disable-progress-updates",
+		"-m", memory, "--disable-progress-updates",
 		"-e", "KUBECONFIG=/etc/kubernetes/admin.conf",
 		"-l", "io.x-k8s.kinc.cluster=kinc",
 		"-p", "127.0.0.1:6443:6443",
 		config.Image,
 	)
+
+	fmt.Println(myCmd)
+
 	if err := runCommand(myCmd, verbose); err != nil {
 		return fmt.Errorf("\nfailed to run node: %w", err)
 	}
