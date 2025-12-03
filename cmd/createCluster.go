@@ -125,6 +125,10 @@ func createCluster(config kincConfig) error {
 
 	// Prepare the node
 
+	if verbose {
+		fmt.Println(myCmd)
+	}
+
 	memory := fmt.Sprintf("%dG", config.Memory)
 
 	s.Suffix = " Preparing nodes 📦"
@@ -133,14 +137,12 @@ func createCluster(config kincConfig) error {
 	myCmd = exec.Command("container", "run",
 		"-d",
 		"--name", config.Name+"-control-plane",
-		"-m", memory, "--disable-progress-updates",
+		"-m", memory, "--progress", "none",
 		"-e", "KUBECONFIG=/etc/kubernetes/admin.conf",
 		"-l", "io.x-k8s.kinc.cluster=kinc",
 		"-p", "127.0.0.1:6443:6443",
 		config.Image,
 	)
-
-	fmt.Println(myCmd)
 
 	if err := runCommand(myCmd, verbose); err != nil {
 		return fmt.Errorf("\nfailed to run node: %w", err)

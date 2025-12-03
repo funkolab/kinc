@@ -5,7 +5,7 @@ A tool for creating and managing local Kubernetes clusters using Apple container
 ## Prerequisites
 
 - macOS with Apple Silicon (M1/M2/M3 or later)
-- Apple containers version 0.6 or later
+- Apple containers version 0.7 or later
 - Go 1.25 or later (for building from source)
 
 
