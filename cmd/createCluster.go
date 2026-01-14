@@ -57,7 +57,7 @@ var createClusterCmd = &cobra.Command{
 		if image != "" {
 			config.Image = image
 		} else {
-			config.Image = "kindest/node:v1.34.0"
+			config.Image = "kindest/node:v1.34.3"
 		}
 
 		configPath, _ := cmd.Flags().GetString("config")
